@@ -31,3 +31,8 @@ rl.on('line', (input) => {
 		process.exit()
 	}
 });
+
+process.on('beforeExit', (code) => {
+  console.log("Всего хорошего!!!");
+});
+
