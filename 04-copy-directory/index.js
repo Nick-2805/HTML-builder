@@ -1,56 +1,29 @@
 const fs = require('fs')
 const path = require('path');
+const fsPromises = require('fs/promises');
 
-const file = 'files-copy';
+
 const oldDir = __dirname + '\\files';
 const newDir = __dirname + '\\files-copy';
-// проверка существования файла
-	fs.access(file, (err) => {
-		if(err){
-			fs.mkdir(__dirname + '/files-copy', () => { 
-				console.log('Папка успешно создана')
-			})
-		}
-		// console.log(`${file}: 'существует'}`);
-	});
 
-			//очистка новой дирректории
-	fs.readdir(newDir, {withFileTypes: true}, (err, files) => {
-				if (err) {
-					// console.error('Папка пуста')
-					return
-				}
-		for(let i = 0; i < files.length; i++) {
-			// console.log('newDir', files[i])
-						//Удаление файла
-			fs.unlink(newDir + '\\' + files[i].name, (err) => {
-				if (err) throw err;
-				// console.log(files[i].name, 'Файл успешно удален');
-			});
-		}
-	})
 
-function copyDir() {
-		//Чтение файла
-		fs.readdir(oldDir, {withFileTypes: true}, (err, files) => {
-		if (err) {
-			console.error(err)
-			return
-		}
-		for(let i = 0; i < files.length; i++) {
-			const nameFile = files[i].name
-			const typeFile = path.extname(files[i].name).slice(1)
+async function copyDir(oldDir, newDir) {
+  await fsPromises.rm(newDir, { force: true, recursive: true });
+  await fsPromises.mkdir(newDir, { recursive: true });
 
-			if(files[i].isFile()) {
-				
-		//   console.log(nameFile, 'and', typeFile)
-				fs.copyFile(`${oldDir}/${nameFile}`, `${newDir}/${nameFile}`, err => {
-					if(err) throw err; // не удалось скопировать файл
-					// console.log('Файл успешно скопирован');
-				});
-			}
-		}
+  const Arr_name_files = await fsPromises.readdir(oldDir, { withFileTypes: true });
 
-	})
+  for (let file of Arr_name_files) {
+    const path_to_oldFile = path.join(oldDir, file.name);
+    const path_to_newFile = path.join(newDir, file.name);
+
+    if (file.isDirectory()) {
+      await fsPromises.mkdir(path_to_newFile, { recursive: true });
+      await copyDir(path_to_oldFile, path_to_newFile);
+
+    } else if (file.isFile()) {
+      await fsPromises.copyFile(path_to_oldFile, path_to_newFile);
+    }
+  }
 }
-copyDir()
+copyDir(oldDir, newDir);

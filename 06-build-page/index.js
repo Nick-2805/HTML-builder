@@ -53,23 +53,34 @@ fs.readdir(path_to_projectDst, {withFileTypes: true}, (err, files)=> {
 })
 
 function copy_file_css() {
-	fs.readdir(path_to_styles, {withFileTypes:true}, (err, style_files) => {
-		if(err) throw console.error('str 67: ', err);
-		for(style of style_files) {
-			const path_to_style = path.join(path_to_styles, style.name)
-			const fileType = path.extname(path_to_style)
-			if(fileType === '.css'){
-				fs.readFile(path_to_style, 'utf-8', (err, contentCss)=> {
-					if(err) throw err
-					fs.appendFile(path_to_newStyleCss, `${contentCss}`, err=>{
-						if(err) throw err;
-						// console.log('Файл дополнен')
-					})
-				})
-
-			}
+	let arr_with_styles = []
+	fs.readdir(path_to_styles, {withFileTypes: true}, (err, files)=> {
+	if(err) {
+		console.error(err)
+		return
+	}
+	for(let i = 0; i < files.length; i++) {
+		const fileType = path.extname(files[i].name).slice(1)
+		
+		if(fileType == 'css') {
+			const path_to_fileCss = path.join(path_to_styles, files[i].name);
+			// console.log(path_to_fileCss)
+			fs.readFile(path_to_fileCss, 'utf8', (err, fileCss)=> {
+				arr_with_styles.push(fileCss)
+	
+				fs.writeFile(
+					path.join(path_to_projectDst, 'style.css'),
+					arr_with_styles.join(''),
+					(err) => {
+						if (err) throw err;
+						// console.log('Файл был создан');
+					}
+				);
+			})
 		}
-	})
+	}
+
+})
 }
 copy_file_css()	// CSS ГОТОВ	
 
@@ -92,7 +103,7 @@ async function create_new_HTML() {
 }
 create_new_HTML()
 
-async function newDirAssets(oldDir, newDir) {
+async function copyDir(oldDir, newDir) {
   await fsPromises.rm(newDir, { force: true, recursive: true });
   await fsPromises.mkdir(newDir, { recursive: true });
 
@@ -104,11 +115,11 @@ async function newDirAssets(oldDir, newDir) {
 
     if (file.isDirectory()) {
       await fsPromises.mkdir(path_to_newFile, { recursive: true });
-      await newDirAssets(path_to_oldFile, path_to_newFile);
+      await copyDir(path_to_oldFile, path_to_newFile);
 
     } else if (file.isFile()) {
       await fsPromises.copyFile(path_to_oldFile, path_to_newFile);
     }
   }
 }
-newDirAssets(path_to_oldAssets, path_to_newAssets);
+copyDir(path_to_oldAssets, path_to_newAssets);
